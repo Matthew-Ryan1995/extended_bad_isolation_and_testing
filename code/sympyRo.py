@@ -263,213 +263,230 @@ def t_En_Ab(l=7):
 
 
 def get_update_paths(source="En", target="An"):
-    if source == "En":
-        if target == "An":
-            def update_paths(old_paths, i, **kwargs):
+    # if source == "En":
+    if target == "An":
+        def update_paths(old_paths, i, **kwargs):
 
-                kw_list = kwargs["kw_list"]
-                ka_list = kwargs["ka_list"]
-                w_list = kwargs["w_list"]
-                a_list = kwargs["a_list"]
+            kw_list = kwargs["kw_list"]
+            ka_list = kwargs["ka_list"]
+            w_list = kwargs["w_list"]
+            a_list = kwargs["a_list"]
 
-                if i == 0:
-                    if old_paths[0] == kwargs["w"]:
-                        new_paths = [old_paths[0] * a_list[0]]
-                    else:
-                        new_paths = [old_paths[0] * ka_list[0]]
+            if i == 0:
+                if old_paths[0] == kwargs["w"]:
+                    new_paths = [old_paths[0] * a_list[0]]
+                elif old_paths[0] == kwargs["sw"]:
+                    new_paths = [old_paths[0] * a_list[0]]
+                else:
+                    new_paths = [old_paths[0] * ka_list[0]]
 
-                    return new_paths
-
-                new_paths = []
-                # For every old path, we append a ka term
-                for pp in old_paths:
-                    new_paths.append(pp*ka_list[i])
-
-                # If the old path ends in ka, we append a loop a*w term
-                for pp in old_paths:
-                    tmp = pp.subs((ka_list[i-1]), w_list[i]*a_list[i])
-                    if not tmp == pp:
-                        new_paths.append(tmp)
-
-                # If the old path ends in a, we push along a kw*a term
-                for pp in old_paths:
-                    tmp = pp.subs((a_list[i-1]), kw_list[i]*a_list[i])
-                    if not tmp == pp:
-                        new_paths.append(tmp)
                 return new_paths
-        elif target == "Ab":
-            def update_paths(old_paths, i, **kwargs):
 
-                kw_list = kwargs["kw_list"]
-                ka_list = kwargs["ka_list"]
-                w_list = kwargs["w_list"]
-                a_list = kwargs["a_list"]
+            new_paths = []
+            # For every old path, we append a ka term
+            for pp in old_paths:
+                new_paths.append(pp*ka_list[i])
 
-                if i == 0:
-                    if old_paths[0] == kwargs["w"]:
-                        new_paths = [old_paths[0] * kw_list[0]]
-                    else:
-                        new_paths = [old_paths[0] * w_list[0]]
+            # If the old path ends in ka, we append a loop a*w term
+            for pp in old_paths:
+                tmp = pp.subs((ka_list[i-1]), w_list[i]*a_list[i])
+                if not tmp == pp:
+                    new_paths.append(tmp)
 
-                    return new_paths
+            # If the old path ends in a, we push along a kw*a term
+            for pp in old_paths:
+                tmp = pp.subs((a_list[i-1]), kw_list[i]*a_list[i])
+                if not tmp == pp:
+                    new_paths.append(tmp)
+            return new_paths
+    elif target == "Ab":
+        def update_paths(old_paths, i, **kwargs):
 
-                new_paths = []
-                # For every old path, we append a kw term
-                for pp in old_paths:
-                    new_paths.append(pp*kw_list[i])
+            kw_list = kwargs["kw_list"]
+            ka_list = kwargs["ka_list"]
+            w_list = kwargs["w_list"]
+            a_list = kwargs["a_list"]
 
-                # If the old path ends in kw, we append a loop a*w term
-                for pp in old_paths:
-                    tmp = pp.subs((kw_list[i-1]), w_list[i]*a_list[i])
-                    if not tmp == pp:
-                        new_paths.append(tmp)
+            if i == 0:
+                if old_paths[0] == kwargs["w"]:
+                    new_paths = [old_paths[0] * kw_list[0]]
+                elif old_paths[0] == kwargs["sw"]:
+                    new_paths = [old_paths[0] * kw_list[0]]
+                else:
+                    new_paths = [old_paths[0] * w_list[0]]
 
-                # If the old path ends in w, we push along a ka*w term
-                for pp in old_paths:
-                    tmp = pp.subs((w_list[i-1]), ka_list[i]*w_list[i])
-                    if not tmp == pp:
-                        new_paths.append(tmp)
                 return new_paths
-        elif target == "In":
-            def update_paths(old_paths, i, **kwargs):
 
-                kw_list = kwargs["kw_list"]
-                ka_list = kwargs["ka_list"]
-                w_list = kwargs["w_list"]
-                a_list = kwargs["a_list"]
-                pT_list = kwargs["pT_list"]
+            new_paths = []
+            # For every old path, we append a kw term
+            for pp in old_paths:
+                new_paths.append(pp*kw_list[i])
 
-                if i == 0:
-                    if old_paths[0] == kwargs["w"]:
-                        new_paths = [old_paths[0] * (1-pT_list[0]) * a_list[0]]
-                    else:
-                        new_paths = [old_paths[0] * ka_list[0]]
+            # If the old path ends in kw, we append a loop a*w term
+            for pp in old_paths:
+                tmp = pp.subs((kw_list[i-1]), w_list[i]*a_list[i])
+                if not tmp == pp:
+                    new_paths.append(tmp)
 
-                    return new_paths
+            # If the old path ends in w, we push along a ka*w term
+            for pp in old_paths:
+                tmp = pp.subs((w_list[i-1]), ka_list[i]*w_list[i])
+                if not tmp == pp:
+                    new_paths.append(tmp)
+            return new_paths
+    elif target == "In":
+        def update_paths(old_paths, i, **kwargs):
 
-                new_paths = []
-                # For every old path, we append a ka term
-                for pp in old_paths:
-                    new_paths.append(pp*ka_list[i])
+            kw_list = kwargs["kw_list"]
+            ka_list = kwargs["ka_list"]
+            w_list = kwargs["w_list"]
+            a_list = kwargs["a_list"]
+            pT_list = kwargs["pT_list"]
 
-                # If the old path ends in ka, we append a loop a*w*(1-pT) term
-                for pp in old_paths:
-                    tmp = pp.subs(
-                        (ka_list[i-1]), (1-pT_list[i]) * w_list[i] * a_list[i])
-                    if not tmp == pp:
-                        new_paths.append(tmp)
+            if i == 0:
+                if old_paths[0] == kwargs["w"]:
+                    new_paths = [old_paths[0] * (1-pT_list[0]) * a_list[0]]
+                elif old_paths[0] == kwargs["sw"]:
+                    new_paths = [old_paths[0] * (1-pT_list[0]) * a_list[0]]
+                else:
+                    new_paths = [old_paths[0] * ka_list[0]]
 
-                # If the old path ends in a, we push along a (1-pT) * kw*a term
-                for pp in old_paths:
-                    tmp = pp.subs(
-                        (a_list[i-1]), (1-pT_list[i]) * kw_list[i] * a_list[i])
-                    if not tmp == pp:
-                        new_paths.append(tmp)
                 return new_paths
-        elif target == "Ib":
-            def update_paths(old_paths, i, **kwargs):
 
-                kw_list = kwargs["kw_list"]
-                ka_list = kwargs["ka_list"]
-                w_list = kwargs["w_list"]
-                a_list = kwargs["a_list"]
-                pT_list = kwargs["pT_list"]
+            new_paths = []
+            # For every old path, we append a ka term
+            for pp in old_paths:
+                new_paths.append(pp*ka_list[i])
 
-                if i == 0:
-                    if old_paths[0] == kwargs["w"]:
-                        new_paths = [old_paths[0] *
-                                     (1-pT_list[0]) * kw_list[0]]
-                    else:
-                        new_paths = [old_paths[0] * w_list[0]]
+            # If the old path ends in ka, we append a loop a*w*(1-pT) term
+            for pp in old_paths:
+                tmp = pp.subs(
+                    (ka_list[i-1]), (1-pT_list[i]) * w_list[i] * a_list[i])
+                if not tmp == pp:
+                    new_paths.append(tmp)
 
-                    return new_paths
+            # If the old path ends in a, we push along a (1-pT) * kw*a term
+            for pp in old_paths:
+                tmp = pp.subs(
+                    (a_list[i-1]), (1-pT_list[i]) * kw_list[i] * a_list[i])
+                if not tmp == pp:
+                    new_paths.append(tmp)
+            return new_paths
+    elif target == "Ib":
+        def update_paths(old_paths, i, **kwargs):
 
-                new_paths = []
-                # For every old path, we append a kw(1-pT) term
-                for pp in old_paths:
-                    new_paths.append(pp*kw_list[i] * (1-pT_list[i]))
+            kw_list = kwargs["kw_list"]
+            ka_list = kwargs["ka_list"]
+            w_list = kwargs["w_list"]
+            a_list = kwargs["a_list"]
+            pT_list = kwargs["pT_list"]
 
-                # If the old path ends in kw*(1-pT), we append a loop a*w*(1-pT) term
-                for pp in old_paths:
-                    tmp = pp.subs((kw_list[i-1]),
-                                  w_list[i] * a_list[i] * (1-pT_list[i]))
+            if i == 0:
+                if old_paths[0] == kwargs["w"]:
+                    new_paths = [old_paths[0] *
+                                 (1-pT_list[0]) * kw_list[0]]
+                elif old_paths[0] == kwargs["sw"]:
+                    new_paths = [old_paths[0] *
+                                 (1-pT_list[0]) * kw_list[0]]
+                else:
+                    new_paths = [old_paths[0] * w_list[0]]
 
-                    if not tmp == pp:
-                        tmp = tmp.subs((pT_list[i-1]), 0)
-                        new_paths.append(tmp)
-
-                # If the old path ends in w*(1-pT), we push along a ka*w*(1-pT) term
-                for pp in old_paths:
-                    tmp = pp.subs((w_list[i-1]),
-                                  ka_list[i] * w_list[i]*(1-pT_list[i]))
-
-                    if not tmp == pp:
-                        tmp = tmp.subs((pT_list[i-1]), 0)
-                        new_paths.append(tmp)
                 return new_paths
-        elif target == "T":
-            def update_paths(old_paths, i, **kwargs):
 
-                kw_list = kwargs["kw_list"]
-                ka_list = kwargs["ka_list"]
-                w_list = kwargs["w_list"]
-                a_list = kwargs["a_list"]
-                pT_list = kwargs["pT_list"]
+            new_paths = []
+            # For every old path, we append a kw(1-pT) term
+            for pp in old_paths:
+                new_paths.append(pp*kw_list[i] * (1-pT_list[i]))
 
-                if i == 0:
-                    if old_paths[0] == kwargs["w"]:
-                        new_paths = [old_paths[0] * pT_list[0]]
-                    else:
-                        new_paths = old_paths
+            # If the old path ends in kw*(1-pT), we append a loop a*w*(1-pT) term
+            for pp in old_paths:
+                tmp = pp.subs((kw_list[i-1]),
+                              w_list[i] * a_list[i] * (1-pT_list[i]))
 
-                    return new_paths
+                if not tmp == pp:
+                    tmp = tmp.subs((pT_list[i-1]), 0)
+                    new_paths.append(tmp)
 
-                if i == 1:  # first path from En comes at i = 1
-                    if old_paths[0] == 0:
+            # If the old path ends in w*(1-pT), we push along a ka*w*(1-pT) term
+            for pp in old_paths:
+                tmp = pp.subs((w_list[i-1]),
+                              ka_list[i] * w_list[i]*(1-pT_list[i]))
+
+                if not tmp == pp:
+                    tmp = tmp.subs((pT_list[i-1]), 0)
+                    new_paths.append(tmp)
+            return new_paths
+    elif target == "T":
+        def update_paths(old_paths, i, **kwargs):
+
+            kw_list = kwargs["kw_list"]
+            ka_list = kwargs["ka_list"]
+            w_list = kwargs["w_list"]
+            a_list = kwargs["a_list"]
+            pT_list = kwargs["pT_list"]
+
+            if i == 0:
+                if old_paths[0] == kwargs["w"]:
+                    new_paths = [old_paths[0] * pT_list[0]]
+                elif old_paths[0] == kwargs["sw"]:
+                    new_paths = [old_paths[0] * pT_list[0]]
+                else:
+                    new_paths = old_paths
+
+                return new_paths
+
+            if i == 1:  # first path from En comes at i = 1
+                if old_paths[0] == 0:
+                    if kwargs["source"] == "En":
                         new_paths = [kwargs["sa"] * w_list[1]
                                      * pT_list[1] / kwargs["kaw"]]
-                        return new_paths
+                    elif kwargs["source"] == "Eb":
+                        new_paths = [kwargs["a"] * w_list[1]
+                                     * pT_list[1] / kwargs["kaw"]]
+                    else:
+                        Warning("Panic")
+                    return new_paths
 
-                new_paths = []
+            new_paths = []
 
-                # Attach kw * pT to the current paths
-                for pp in old_paths:
-                    new_paths.append(
-                        (pp*kw_list[i]*pT_list[i] / kwargs["kaw"]).subs((pT_list[i-1]), 1-pT_list[i-1]))
+            # Attach kw * pT to the current paths
+            for pp in old_paths:
+                new_paths.append(
+                    (pp*kw_list[i]*pT_list[i] / kwargs["kaw"]).subs((pT_list[i-1]), 1-pT_list[i-1]))
 
-                # Replace kw*(1-pt) with a loop: a*w*pT
-                for pp in old_paths:
-                    tmp = pp.subs((kw_list[i-1]),
-                                  a_list[i-1]*w_list[i]*pT_list[i] / kwargs["kaw"])
-                    if not tmp == pp:
-                        tmp = tmp.subs((pT_list[i-1]), 1)
-                        new_paths.append(tmp)
+            # Replace kw*(1-pt) with a loop: a*w*pT
+            for pp in old_paths:
+                tmp = pp.subs((kw_list[i-1]),
+                              a_list[i-1]*w_list[i]*pT_list[i] / kwargs["kaw"])
+                if not tmp == pp:
+                    tmp = tmp.subs((pT_list[i-1]), 1)
+                    new_paths.append(tmp)
 
-                # Replace w*pt with a push along the top: wk * w * pT
-                for pp in old_paths:
-                    tmp = pp.subs(
-                        (w_list[i-1]), ka_list[i-1]*w_list[i]*pT_list[i] / kwargs["kaw"])
-                    if not tmp == pp:
-                        tmp = tmp.subs((pT_list[i-1]), 1)
-                        new_paths.append(tmp)
-                return new_paths
-        else:
-            assert False, "target must be either An, Ab, In, Ib, or T, the states of infectiousness."
-    elif source == "Eb":
-        if target == "An":
-            update_paths = None
-        elif target == "Ab":
-            update_paths = None
-        elif target == "In":
-            update_paths = None
-        elif target == "Ib":
-            update_paths = None
-        elif target == "T":
-            update_paths = None
-        else:
-            assert False, "target must be either An, Ab, In, Ib, or T, the states of infectiousness."
+            # Replace w*pt with a push along the top: wk * w * pT
+            for pp in old_paths:
+                tmp = pp.subs(
+                    (w_list[i-1]), ka_list[i-1]*w_list[i]*pT_list[i] / kwargs["kaw"])
+                if not tmp == pp:
+                    tmp = tmp.subs((pT_list[i-1]), 1)
+                    new_paths.append(tmp)
+            return new_paths
     else:
-        assert False, "Source must be either En or Eb, the states at infection."
+        assert False, "target must be either An, Ab, In, Ib, or T, the states of infectiousness."
+    # elif source == "Eb":
+    #     if target == "An":
+    #         update_paths = None
+    #     elif target == "Ab":
+    #         update_paths = None
+    #     elif target == "In":
+    #         update_paths = None
+    #     elif target == "Ib":
+    #         update_paths = None
+    #     elif target == "T":
+    #         update_paths = None
+    #     else:
+    #         assert False, "target must be either An, Ab, In, Ib, or T, the states of infectiousness."
+    # else:
+    #     assert False, "Source must be either En or Eb, the states at infection."
 
     return update_paths
 
@@ -521,7 +538,7 @@ def initialise_paths(source="En", target="An", **kwargs):
     elif source == "Eb":
         if target == "T":
             initial_paths = [
-                [],  # Paths exiting En epidiemiolgically
+                [0],  # Paths exiting En epidiemiolgically
                 [sw]  # Paths exiting Eb epidiemiolgically
             ]
         else:
@@ -534,6 +551,8 @@ def initialise_paths(source="En", target="An", **kwargs):
 
     return initial_paths
 
+# TODO: evaluate outputs to derive fromulae
+
 
 def t_source_target(l=7, source="En",
                     target="An",
@@ -541,7 +560,6 @@ def t_source_target(l=7, source="En",
                     simplify_pT=True,
                     separate_symbols=False):
 
-    # TODO: Sub in individual symbols at the end.
     # I need to be careful about this when I have delta p_T in there, as order matters
     #
 
@@ -606,7 +624,8 @@ def t_source_target(l=7, source="En",
             "a": a,
             "w": w,
             "pT": pT,
-            "kaw": kaw
+            "kaw": kaw,
+            "source": source
         }
         for i in range(0, l):
 
