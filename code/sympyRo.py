@@ -7,260 +7,11 @@ Created on Wed Jun 11 13:24:01 2025
 """
 # %%
 from sympy import *
+import numpy as np
 from itertools import chain
 
 
 # %% Functions
-
-def t_En_An(l=7):
-
-    # To make this ork with individual symbols, I need to think carefully
-    # about my update rules.
-    # pA, k, a, w, g, s = symbols("pA k a w g s")
-
-    # sa = s + a
-    # ka = k*g + a
-    # kw = k*g + w
-    # kg = k*g
-    # saw = s + a + w
-    # kaw = kg + a + w
-
-    sa = Symbol("(s + a)")
-    a, w = symbols("a w")
-    ka = Symbol("(kg + a)")
-    kw = Symbol("(kg + w)")
-    pA = Symbol("pA")
-    kg = Symbol("kg")
-    saw = Symbol("(s+a+w)")
-    kaw = Symbol("(k+a+w)")
-
-    # Paths exiting En
-    EN_paths = []
-
-    EN_paths.append(Mul(sa, ka, evaluate=False))
-
-    a_list = [a]
-    w_list = [w]
-    ka_list = [ka]
-    kw_list = [kw]
-
-    for i in range(1, l):
-
-        ka_list.append(Symbol(f"(kg + a{i})"))
-        kw_list.append(Symbol(f"(kg + w{i})"))
-        a_list.append(Symbol(f"a{i}"))
-        w_list.append(Symbol(f"w{i}"))
-
-        old_paths = EN_paths.copy()
-        new_paths = []
-
-        # For every old path, we append a ka term
-        for pp in old_paths:
-            new_paths.append(pp*ka_list[i])
-
-        # If the old path ends in ka, we append a loop a*w term
-        for pp in old_paths:
-            tmp = pp.subs((ka_list[i-1]), w_list[i]*a_list[i])
-            if not tmp == pp:
-                new_paths.append(tmp)
-
-        # If the old path ends in a, we push along a kw*a term
-        for pp in old_paths:
-            tmp = pp.subs((a_list[i-1]), kw_list[i]*a_list[i])
-            if not tmp == pp:
-                new_paths.append(tmp)
-        EN_paths = new_paths.copy()
-
-    simplified_EN_paths = []
-    for pp in EN_paths:
-        for i in range(1, l):
-            pp = pp.subs((a_list[i]), a_list[0]).subs((w_list[i]), w_list[0]).subs(
-                (ka_list[i]), ka_list[0]).subs((kw_list[i]), kw_list[0])
-        simplified_EN_paths.append(pp)
-
-    cont_sum_EN = simplified_EN_paths[0]
-    for i in range(1, len(simplified_EN_paths)):
-        cont_sum_EN += simplified_EN_paths[i]
-
-    # Paths exiting Eb
-    EB_paths = []
-
-    EB_paths.append(Mul(w, a, evaluate=False))
-
-    a_list = [a]
-    w_list = [w]
-    ka_list = [ka]
-    kw_list = [kw]
-
-    for i in range(1, l):
-
-        ka_list.append(Symbol(f"(kg + a{i})"))
-        kw_list.append(Symbol(f"(kg + w{i})"))
-        a_list.append(Symbol(f"a{i}"))
-        w_list.append(Symbol(f"w{i}"))
-
-        old_paths = EB_paths.copy()
-        new_paths = []
-
-        # For every old path, we append a ka term
-        for pp in old_paths:
-            new_paths.append(pp*ka_list[i])
-
-        # If the old path ends in ka, we append a loop a*w term
-        for pp in old_paths:
-            tmp = pp.subs((ka_list[i-1]), w_list[i]*a_list[i])
-            if not tmp == pp:
-                new_paths.append(tmp)
-
-        # If the old path ends in a, we push along a kw*a term
-        for pp in old_paths:
-            tmp = pp.subs((a_list[i-1]), kw_list[i]*a_list[i])
-            if not tmp == pp:
-                new_paths.append(tmp)
-        EB_paths = new_paths.copy()
-
-    simplified_EB_paths = []
-    for pp in EB_paths:
-        for i in range(1, l):
-            pp = pp.subs((a_list[i]), a_list[0]).subs((w_list[i]), w_list[0]).subs(
-                (ka_list[i]), ka_list[0]).subs((kw_list[i]), kw_list[0])
-        simplified_EB_paths.append(pp)
-
-    cont_sum_EB = simplified_EB_paths[0]
-    for i in range(1, len(simplified_EB_paths)):
-        cont_sum_EB += simplified_EB_paths[i]
-
-    total_time = cont_sum_EN + cont_sum_EB
-
-    total_time *= pA/(kg*saw*(kaw**l))
-
-    return total_time
-
-
-def t_En_Ab(l=7):
-
-    # To make this ork with individual symbols, I need to think carefully
-    # about my update rules.
-    # pA, k, a, w, g, s = symbols("pA k a w g s")
-
-    # sa = s + a
-    # ka = k*g + a
-    # kw = k*g + w
-    # kg = k*g
-    # saw = s + a + w
-    # kaw = kg + a + w
-
-    sa = Symbol("(s + a)")
-    a, w = symbols("a w")
-    ka = Symbol("(kg + a)")
-    kw = Symbol("(kg + w)")
-    pA = Symbol("pA")
-    kg = Symbol("kg")
-    saw = Symbol("(s+a+w)")
-    kaw = Symbol("(k+a+w)")
-
-    # Paths exiting En
-    EN_paths = []
-
-    EN_paths.append(Mul(sa, w, evaluate=False))
-
-    a_list = [a]
-    w_list = [w]
-    ka_list = [ka]
-    kw_list = [kw]
-
-    for i in range(1, l):
-
-        ka_list.append(Symbol(f"(kg + a{i})"))
-        kw_list.append(Symbol(f"(kg + w{i})"))
-        a_list.append(Symbol(f"a{i}"))
-        w_list.append(Symbol(f"w{i}"))
-
-        old_paths = EN_paths.copy()
-        new_paths = []
-
-        # For every old path, we append a kw term
-        for pp in old_paths:
-            new_paths.append(pp*kw_list[i])
-
-        # If the old path ends in kw, we append a loop a*w term
-        for pp in old_paths:
-            tmp = pp.subs((kw_list[i-1]), w_list[i]*a_list[i])
-            if not tmp == pp:
-                new_paths.append(tmp)
-
-        # If the old path ends in w, we push along a ka*w term
-        for pp in old_paths:
-            tmp = pp.subs((w_list[i-1]), ka_list[i]*w_list[i])
-            if not tmp == pp:
-                new_paths.append(tmp)
-        EN_paths = new_paths.copy()
-
-    simplified_EN_paths = []
-    for pp in EN_paths:
-        for i in range(1, l):
-            pp = pp.subs((a_list[i]), a_list[0]).subs((w_list[i]), w_list[0]).subs(
-                (ka_list[i]), ka_list[0]).subs((kw_list[i]), kw_list[0])
-        simplified_EN_paths.append(pp)
-
-    cont_sum_EN = simplified_EN_paths[0]
-    for i in range(1, len(simplified_EN_paths)):
-        cont_sum_EN += simplified_EN_paths[i]
-
-    # Paths exiting Eb
-    EB_paths = []
-    # FIXME:: THE ORDER OF w IS NOT IN THE RIGHT PLACE, LEADING TO NEW PATH BEING ADDED
-    EB_paths.append(Mul(w, kw, evaluate=False))
-
-    a_list = [a]
-    w_list = [w]
-    ka_list = [ka]
-    kw_list = [kw]
-
-    for i in range(1, l):
-
-        ka_list.append(Symbol(f"(kg + a{i})"))
-        kw_list.append(Symbol(f"(kg + w{i})"))
-        a_list.append(Symbol(f"a{i}"))
-        w_list.append(Symbol(f"w{i}"))
-
-        old_paths = EB_paths.copy()
-        new_paths = []
-
-        # For every old path, we append a kw term
-        for pp in old_paths:
-            new_paths.append(pp*kw_list[i])
-
-        # If the old path ends in kw, we append a loop a*w term
-        for pp in old_paths:
-            tmp = pp.subs((kw_list[i-1]), w_list[i]*a_list[i])
-            if not tmp == pp:
-                new_paths.append(tmp)
-
-        # If the old path ends in w, we push along a ka*w term
-        for pp in old_paths:
-            tmp = pp.subs((w_list[i-1]), ka_list[i]*w_list[i])
-            if not tmp == pp:
-                new_paths.append(tmp)
-        EB_paths = new_paths.copy()
-
-    simplified_EB_paths = []
-    for pp in EB_paths:
-        for i in range(1, l):
-            pp = pp.subs((a_list[i]), a_list[0]).subs((w_list[i]), w_list[0]).subs(
-                (ka_list[i]), ka_list[0]).subs((kw_list[i]), kw_list[0])
-        simplified_EB_paths.append(pp)
-
-    cont_sum_EB = simplified_EB_paths[0]
-    for i in range(1, len(simplified_EB_paths)):
-        cont_sum_EB += simplified_EB_paths[i]
-
-    total_time = cont_sum_EN + cont_sum_EB
-
-    total_time *= pA/(kg*saw*(kaw**l))
-
-    return cont_sum_EB  # total_time
-
 
 def get_update_paths(source="En", target="An"):
     # if source == "En":
@@ -472,21 +223,6 @@ def get_update_paths(source="En", target="An"):
             return new_paths
     else:
         assert False, "target must be either An, Ab, In, Ib, or T, the states of infectiousness."
-    # elif source == "Eb":
-    #     if target == "An":
-    #         update_paths = None
-    #     elif target == "Ab":
-    #         update_paths = None
-    #     elif target == "In":
-    #         update_paths = None
-    #     elif target == "Ib":
-    #         update_paths = None
-    #     elif target == "T":
-    #         update_paths = None
-    #     else:
-    #         assert False, "target must be either An, Ab, In, Ib, or T, the states of infectiousness."
-    # else:
-    #     assert False, "Source must be either En or Eb, the states at infection."
 
     return update_paths
 
@@ -560,16 +296,6 @@ def t_source_target(l=7, source="En",
                     simplify_pT=True,
                     separate_symbols=False):
 
-    # I need to be careful about this when I have delta p_T in there, as order matters
-    #
-
-    # sa = s + a
-    # ka = k*g + a
-    # kw = k*g + w
-    # kg = k*g
-    # saw = s + a + w
-    # kaw = kg + a + w
-
     if target == "An" or target == "Ab":
         simplify_pT = False
 
@@ -639,10 +365,7 @@ def t_source_target(l=7, source="En",
             new_paths = update_paths(old_paths=old_paths,
                                      i=i,
                                      **terms_list)
-            # pp = new_paths.copy()
             pp.append(new_paths)
-        # if m > 0:
-        #     return pp
         if target == "T":
             pp = list(chain.from_iterable(pp[1:]))
         else:
@@ -685,112 +408,223 @@ def t_source_target(l=7, source="En",
     return total_time
 
 
-# %% Create symbols
-# sa = Symbol("(s + a)")
-# a, w = symbols("a w")
-# ka = Symbol("(kg + a)")
-# kw = Symbol("(kg + w)")
+def get_foi(k=1, source="En"):
 
-# EN_paths = []
+    # Define symbols
+    qA, qT = symbols("qA qT")
+    beta_list = symbols(f"b1:{k+1}")
 
-# EN_paths.append(Mul(sa, ka, evaluate=False))
+    # Define loops lists
+    l_range = np.arange(start=1, stop=k+1, step=1)
+    target_list = ["An", "Ab", "In", "Ib", "T"]
 
-# l = 7
+    foi = 0
+    for i, l in enumerate(l_range):
+        for t in target_list:
+            tmp = t_source_target(l=l,
+                                  source=source,
+                                  target=t,
+                                  simplify=True,
+                                  simplify_pT=False,
+                                  separate_symbols=True)
+            if "A" in t:
+                foi += qA * beta_list[i] * tmp
+            elif "T" in t:
+                foi += qT * beta_list[i] * tmp
+            else:
+                foi += beta_list[i] * tmp
 
-# a_list = [a]
-# w_list = [w]
-# ka_list = [ka]
-# kw_list = [kw]
+    return foi
 
-# for i in range(1, l):
 
-#     ka_list.append(Symbol(f"(kg + a{i})"))
-#     kw_list.append(Symbol(f"(kg + w{i})"))
-#     a_list.append(Symbol(f"a{i}"))
-#     w_list.append(Symbol(f"w{i}"))
+def get_R0(k=1):
 
-#     old_paths = EN_paths.copy()
-#     new_paths = []
+    if k < 1:
+        assert False, "There are no infection classes, try again"
 
-#     for pp in old_paths:
-#         new_paths.append(pp*ka_list[i])
+    # Define symbols
+    qB, B, N = symbols("qB B N")
 
-#     for pp in old_paths:
-#         tmp = pp.subs((ka_list[i-1]), w_list[i]*a_list[i])
-#         if not tmp == pp:
-#             new_paths.append(tmp)
+    # Get FOIs
+    Lambda_N = get_foi(k=k, source="En")
+    Lambda_B = get_foi(k=k, source="Eb")
 
-#     for pp in old_paths:
-#         tmp = pp.subs((a_list[i-1]), kw_list[i]*a_list[i])
-#         if not tmp == pp:
-#             new_paths.append(tmp)
-#     EN_paths = new_paths.copy()
+    # Leverage det = 0 in the NGM, take the trace
+    R0 = Lambda_N * N + qB * Lambda_B * B
 
-# # print(paths)
+    return R0
 
-# # %%
-# simplified_EN_paths = []
-# for pp in EN_paths:
+
+def get_all_symbols(K=1):
+
+    # Behavioural transistions
+    a, w = symbols("a w")
+
+    # Epi natural paratemeters
+    k, g, s = symbols("k g s")
+
+    # INfection free steady states
+    B, N = symbols("B N")
+
+    # FOI modifiers
+    qB, qA, qT = symbols("qB qA qT")
+
+    # Transmission rates
+    beta_list = symbols(f"b1:{K+1}")
+
+    # Probabilities
+    pA = Symbol("pA")
+    pT_list = []
+    for i in range(K):
+        pT_list.append(Symbol(f"pT{i}"))
+
+    symb_dict = {
+        # Behaviour transitions
+        "a": a,
+        "w": w,
+        # Probabilities
+        "pA": pA,
+        "pT_list": pT_list,
+        # Epi natural parameters
+        "k": k,
+        "g": g,
+        "s": s,
+        # Transmission rates
+        "beta_list": beta_list,
+        # FOI modifiers
+        "qB": qB,
+        "qA": qA,
+        "qT": qT,
+        # Infection free steady states
+        "B": B,
+        "N": N
+    }
+
+    return symb_dict
+
+
+# %% Testing
+
+# def t_En_An(l=7):
+
+#     # To make this ork with individual symbols, I need to think carefully
+#     # about my update rules.
+#     # pA, k, a, w, g, s = symbols("pA k a w g s")
+
+#     # sa = s + a
+#     # ka = k*g + a
+#     # kw = k*g + w
+#     # kg = k*g
+#     # saw = s + a + w
+#     # kaw = kg + a + w
+
+#     sa = Symbol("(s + a)")
+#     a, w = symbols("a w")
+#     ka = Symbol("(kg + a)")
+#     kw = Symbol("(kg + w)")
+#     pA = Symbol("pA")
+#     kg = Symbol("kg")
+#     saw = Symbol("(s+a+w)")
+#     kaw = Symbol("(k+a+w)")
+
+#     # Paths exiting En
+#     EN_paths = []
+
+#     EN_paths.append(Mul(sa, ka, evaluate=False))
+
+#     a_list = [a]
+#     w_list = [w]
+#     ka_list = [ka]
+#     kw_list = [kw]
+
 #     for i in range(1, l):
-#         pp = pp.subs((a_list[i]), a_list[0]).subs((w_list[i]), w_list[0]).subs(
-#             (ka_list[i]), ka_list[0]).subs((kw_list[i]), kw_list[0])
-#     simplified_EN_paths.append(pp)
 
-# cont_sum_EN = simplified_EN_paths[0]
-# for i in range(1, len(simplified_EN_paths)):
-#     cont_sum_EN += simplified_EN_paths[i]
+#         ka_list.append(Symbol(f"(kg + a{i})"))
+#         kw_list.append(Symbol(f"(kg + w{i})"))
+#         a_list.append(Symbol(f"a{i}"))
+#         w_list.append(Symbol(f"w{i}"))
 
-# # cont_sum.collect(a*w)
+#         old_paths = EN_paths.copy()
+#         new_paths = []
 
-# # %% Create symbols
+#         # For every old path, we append a ka term
+#         for pp in old_paths:
+#             new_paths.append(pp*ka_list[i])
 
+#         # If the old path ends in ka, we append a loop a*w term
+#         for pp in old_paths:
+#             tmp = pp.subs((ka_list[i-1]), w_list[i]*a_list[i])
+#             if not tmp == pp:
+#                 new_paths.append(tmp)
 
-# EB_paths = []
+#         # If the old path ends in a, we push along a kw*a term
+#         for pp in old_paths:
+#             tmp = pp.subs((a_list[i-1]), kw_list[i]*a_list[i])
+#             if not tmp == pp:
+#                 new_paths.append(tmp)
+#         EN_paths = new_paths.copy()
 
-# EB_paths.append(Mul(w, a, evaluate=False))
+#     simplified_EN_paths = []
+#     for pp in EN_paths:
+#         for i in range(1, l):
+#             pp = pp.subs((a_list[i]), a_list[0]).subs((w_list[i]), w_list[0]).subs(
+#                 (ka_list[i]), ka_list[0]).subs((kw_list[i]), kw_list[0])
+#         simplified_EN_paths.append(pp)
 
+#     cont_sum_EN = simplified_EN_paths[0]
+#     for i in range(1, len(simplified_EN_paths)):
+#         cont_sum_EN += simplified_EN_paths[i]
 
-# a_list = [a]
-# w_list = [w]
-# ka_list = [ka]
-# kw_list = [kw]
+#     # Paths exiting Eb
+#     EB_paths = []
 
-# for i in range(1, l):
+#     EB_paths.append(Mul(w, a, evaluate=False))
 
-#     ka_list.append(Symbol(f"(kg + a{i})"))
-#     kw_list.append(Symbol(f"(kg + w{i})"))
-#     a_list.append(Symbol(f"a{i}"))
-#     w_list.append(Symbol(f"w{i}"))
+#     a_list = [a]
+#     w_list = [w]
+#     ka_list = [ka]
+#     kw_list = [kw]
 
-#     old_paths = EB_paths.copy()
-#     new_paths = []
-
-#     for pp in old_paths:
-#         new_paths.append(pp*ka_list[i])
-
-#     for pp in old_paths:
-#         tmp = pp.subs((ka_list[i-1]), w_list[i]*a_list[i])
-#         if not tmp == pp:
-#             new_paths.append(tmp)
-
-#     for pp in old_paths:
-#         tmp = pp.subs((a_list[i-1]), kw_list[i]*a_list[i])
-#         if not tmp == pp:
-#             new_paths.append(tmp)
-#     EB_paths = new_paths.copy()
-
-# # print(paths)
-
-# # %%
-# simplified_EB_paths = []
-# for pp in EB_paths:
 #     for i in range(1, l):
-#         pp = pp.subs((a_list[i]), a_list[0]).subs((w_list[i]), w_list[0]).subs(
-#             (ka_list[i]), ka_list[0]).subs((kw_list[i]), kw_list[0])
-#     simplified_EB_paths.append(pp)
 
-# cont_sum_EB = simplified_EB_paths[0]
-# for i in range(1, len(simplified_EB_paths)):
-#     cont_sum_EB += simplified_EB_paths[i]
+#         ka_list.append(Symbol(f"(kg + a{i})"))
+#         kw_list.append(Symbol(f"(kg + w{i})"))
+#         a_list.append(Symbol(f"a{i}"))
+#         w_list.append(Symbol(f"w{i}"))
 
-# # cont_sum.collect(a*w)
+#         old_paths = EB_paths.copy()
+#         new_paths = []
+
+#         # For every old path, we append a ka term
+#         for pp in old_paths:
+#             new_paths.append(pp*ka_list[i])
+
+#         # If the old path ends in ka, we append a loop a*w term
+#         for pp in old_paths:
+#             tmp = pp.subs((ka_list[i-1]), w_list[i]*a_list[i])
+#             if not tmp == pp:
+#                 new_paths.append(tmp)
+
+#         # If the old path ends in a, we push along a kw*a term
+#         for pp in old_paths:
+#             tmp = pp.subs((a_list[i-1]), kw_list[i]*a_list[i])
+#             if not tmp == pp:
+#                 new_paths.append(tmp)
+#         EB_paths = new_paths.copy()
+
+#     simplified_EB_paths = []
+#     for pp in EB_paths:
+#         for i in range(1, l):
+#             pp = pp.subs((a_list[i]), a_list[0]).subs((w_list[i]), w_list[0]).subs(
+#                 (ka_list[i]), ka_list[0]).subs((kw_list[i]), kw_list[0])
+#         simplified_EB_paths.append(pp)
+
+#     cont_sum_EB = simplified_EB_paths[0]
+#     for i in range(1, len(simplified_EB_paths)):
+#         cont_sum_EB += simplified_EB_paths[i]
+
+#     total_time = cont_sum_EN + cont_sum_EB
+
+#     total_time *= pA/(kg*saw*(kaw**l))
+
+#     return total_time
