@@ -5,7 +5,7 @@ Created on Thu Jul  6 13:34:08 2023
 
 Class definitions and helper functions for a BaD SIRS model.
 
-TODO: 
+TODO:
     - Add incidence tracking
     - Add steady states
     - Add reproduction number
@@ -24,6 +24,11 @@ import matplotlib.colors as clrs
 import matplotlib.ticker as tkr
 import json
 from enum import IntEnum
+import sympyRo
+
+# %% Plotting options
+dpi = 300
+flag_save_figs = True
 
 # %% Class definitions
 
@@ -585,6 +590,34 @@ class bad(object):
         else:
             print("Model has not been run")
             return np.nan
+
+    def get_reproduction_number(self):
+
+        R0 = sympyRo.get_R0(k=self.k)
+        symbols = sympyRo.get_all_symbols(K=self.k)
+
+        N = self.get_ss_N(Tstar=0)
+        a = self.rate_to_no_test(N=N)
+        w = self.rate_to_test(B=1-N, T=0)
+
+        R0 = R0.subs((symbols["k"]), self.k)
+        R0 = R0.subs((symbols["pA"]), self.pA)
+        R0 = R0.subs((symbols["g"]), self.gamma)
+        R0 = R0.subs((symbols["s"]), self.sigma)
+        R0 = R0.subs((symbols["qB"]), self.qB)
+        R0 = R0.subs((symbols["qA"]), self.qA)
+        R0 = R0.subs((symbols["qT"]), self.qT)
+
+        for i in range(self.k):
+            R0 = R0.subs((symbols["beta_list"][i]), self.transmission[i])
+            R0 = R0.subs((symbols["pT_list"][i]), self.delta[i] * self.pT[i])
+
+        R0 = R0.subs((symbols["B"]), 1-N)
+        R0 = R0.subs((symbols["N"]), N)
+        R0 = R0.subs((symbols["a"]), a)
+        R0 = R0.subs((symbols["w"]), w)
+
+        return float(R0)
 
     # def get_ss_B_a_w(self, T):
     #     """
@@ -1394,7 +1427,7 @@ if __name__ == "__main__":
 
     # set up parameter values for the simulations
     flag_use_defaults = True
-    flag_save_figs = False
+    flag_simple_plots = False
     num_days_to_run = 100
 
     cust_params = load_param_defaults()
@@ -1416,14 +1449,211 @@ if __name__ == "__main__":
         cust_params["w2"] = cust_params["w2"]*gamma
         cust_params["w3"] = cust_params["w3"]*gamma
 
-    cust_params["delta"] = [0, 0, 0, 0, 1, 1, 1]
+    cust_params["delta"] = [1, 1, 1, 0]
     # cust_params["pT"] = [0.1, 0.2, 0.3, 0.4, 0.9, 0.9, 0.9]
-    # cust_params["k"] = 7
+    cust_params["k"] = 4
     M1 = bad(**cust_params)
 
     M1.run(t_end=num_days_to_run, t_step=0.1)
 
-    M1.plot()
+# %% Plots
+
+    if flag_simple_plots:
+        M1.plot()
+    else:
+        # Phase plot examples
+        cust_params = load_param_defaults()
+        cust_params["k"] = 7
+
+        # Test on day one
+        cust_params["delta"] = [1, 0, 0, 0, 0, 0, 0]
+        M1 = bad(**cust_params)
+        M1.run(t_end=num_days_to_run, t_step=0.1)
+        # Test on day four
+        cust_params["delta"] = [0, 0, 0, 1, 0, 0, 0]
+        M2 = bad(**cust_params)
+        M2.run(t_end=num_days_to_run, t_step=0.1)
+        # Test on day seven
+        cust_params["delta"] = [0, 0, 0, 0, 0, 0, 1]
+        M3 = bad(**cust_params)
+        M3.run(t_end=num_days_to_run, t_step=0.1)
+
+        plt.figure()
+        plt.title("S - I phase plane")
+        plt.plot(M1.get_S(), M1.get_all_infectious(),
+                 linestyle="-",
+                 label="Testing days: 1")
+        plt.plot(M2.get_S(), M2.get_all_infectious(),
+                 linestyle="--",
+                 label="Testing days: 4")
+        plt.plot(M3.get_S(), M3.get_all_infectious(),
+                 linestyle=":",
+                 label="Testing days: 7")
+        plt.legend(loc=(0.6, 0.75))
+        plt.xlabel("Susceptibles (Sn + Sb)")
+        plt.ylabel("Infectious (I + A + T)")
+        if flag_save_figs:
+            plt.savefig("../img/phasePlane_S_I_oneTests.png",
+                        dpi=dpi,
+                        bbox_inches="tight")
+            plt.close()
+        else:
+            plt.show()
+
+        plt.figure()
+        plt.title("B - T phase plane")
+        plt.plot(M1.get_B(), M1.get_T(),
+                 linestyle="-",
+                 label="Testing days: 1")
+        plt.plot(M2.get_B(), M2.get_T(),
+                 linestyle="--",
+                 label="Testing days: 4")
+        plt.plot(M3.get_B(), M3.get_T(),
+                 linestyle=":",
+                 label="Testing days: 7")
+        plt.legend(loc=(0.01, 0.75))
+        plt.xlabel("Behaviour (Sb + Eb + Ab + Ib + T + Rb)")
+        plt.ylabel("Positive tests (T)")
+        if flag_save_figs:
+            plt.savefig("../img/phasePlane_B_T_oneTests.png",
+                        dpi=dpi,
+                        bbox_inches="tight")
+            plt.close()
+        else:
+            plt.show()
+
+        # Test on day one, two, three
+        cust_params["delta"] = [1, 1, 1, 0, 0, 0, 0]
+        M1 = bad(**cust_params)
+        M1.run(t_end=num_days_to_run, t_step=0.1)
+        # Test on day one, four, seven
+        cust_params["delta"] = [1, 0, 0, 1, 0, 0, 1]
+        M2 = bad(**cust_params)
+        M2.run(t_end=num_days_to_run, t_step=0.1)
+        # Test on day five, six, seven
+        cust_params["delta"] = [0, 0, 0, 0, 1, 1, 1]
+        M3 = bad(**cust_params)
+        M3.run(t_end=num_days_to_run, t_step=0.1)
+
+        plt.figure()
+        plt.title("S - I phase plane")
+        plt.plot(M1.get_S(), M1.get_all_infectious(),
+                 linestyle="-",
+                 label="Testing days: 1, 2, 3")
+        plt.plot(M2.get_S(), M2.get_all_infectious(),
+                 linestyle="--",
+                 label="Testing days: 1, 4, 7")
+        plt.plot(M3.get_S(), M3.get_all_infectious(),
+                 linestyle=":",
+                 label="Testing days: 5, 6, 7")
+        plt.legend(loc=(0.55, 0.75))
+        plt.xlabel("Susceptibles (Sn + Sb)")
+        plt.ylabel("Infectious (I + A + T)")
+        if flag_save_figs:
+            plt.savefig("../img/phasePlane_S_I_threeTests.png",
+                        dpi=dpi,
+                        bbox_inches="tight")
+            plt.close()
+        else:
+            plt.show()
+
+        plt.figure()
+        plt.title("B - T phase plane")
+        plt.plot(M1.get_B(), M1.get_T(),
+                 linestyle="-",
+                 label="Testing days: 1, 2, 3")
+        plt.plot(M2.get_B(), M2.get_T(),
+                 linestyle="--",
+                 label="Testing days: 1, 4, 7")
+        plt.plot(M3.get_B(), M3.get_T(),
+                 linestyle=":",
+                 label="Testing days: 5, 6, 7")
+        plt.legend(loc=(0.01, 0.75))
+        plt.xlabel("Behaviour (Sb + Eb + Ab + Ib + T + Rb)")
+        plt.ylabel("Positive tests (T)")
+        if flag_save_figs:
+            plt.savefig("../img/phasePlane_B_T_threeTests.png",
+                        dpi=dpi,
+                        bbox_inches="tight")
+            plt.close()
+        else:
+            plt.show()
+
+        # Test on day one,
+        cust_params["delta"] = [1, 0, 0, 0, 0, 0, 0]
+        M1 = bad(**cust_params)
+        M1.run(t_end=num_days_to_run, t_step=0.1)
+        # Test on day one, two
+        cust_params["delta"] = [1, 1, 0, 0, 0, 0, 0]
+        M2 = bad(**cust_params)
+        M2.run(t_end=num_days_to_run, t_step=0.1)
+        # Test on day one, two, thee
+        cust_params["delta"] = [1, 1, 1, 0, 0, 0, 0]
+        M3 = bad(**cust_params)
+        M3.run(t_end=num_days_to_run, t_step=0.1)
+
+        plt.figure()
+        plt.title("S - I phase plane")
+        plt.plot(M1.get_S(), M1.get_all_infectious(),
+                 linestyle="-",
+                 label="Testing days: 1")
+        plt.plot(M2.get_S(), M2.get_all_infectious(),
+                 linestyle="--",
+                 label="Testing days: 1, 2")
+        plt.plot(M3.get_S(), M3.get_all_infectious(),
+                 linestyle=":",
+                 label="Testing days: 1, 2, 3")
+        plt.legend(loc=(0.55, 0.75))
+        plt.xlabel("Susceptibles (Sn + Sb)")
+        plt.ylabel("Infectious (I + A + T)")
+        if flag_save_figs:
+            plt.savefig("../img/phasePlane_S_I_differentNumbers.png",
+                        dpi=dpi,
+                        bbox_inches="tight")
+            plt.close()
+        else:
+            plt.show()
+
+        plt.figure()
+        plt.title("B - T phase plane")
+        plt.plot(M1.get_B(), M1.get_T(),
+                 linestyle="-",
+                 label="Testing days: 1")
+        plt.plot(M2.get_B(), M2.get_T(),
+                 linestyle="--",
+                 label="Testing days: 1, 2")
+        plt.plot(M3.get_B(), M3.get_T(),
+                 linestyle=":",
+                 label="Testing days: 1, 2, 3")
+        plt.legend(loc=(0.01, 0.75))
+        plt.xlabel("Behaviour (Sb + Eb + Ab + Ib + T + Rb)")
+        plt.ylabel("Positive tests (T)")
+        if flag_save_figs:
+            plt.savefig("../img/phasePlane_B_T_differentNumbers.png",
+                        dpi=dpi,
+                        bbox_inches="tight")
+            plt.close()
+        else:
+            plt.show()
+
+# %% Testing R0
+
+    R0 = 2.0
+
+    cust_params = load_param_defaults()
+    cust_params["transmission"] = 1
+    cust_params["delta"] = [1, 0, 0, 1, 0, 0, 1]
+
+    M = bad(**cust_params)
+
+    R0_multiplier = M.get_reproduction_number()
+
+    cust_params["transmission"] = R0/R0_multiplier
+
+    M = bad(**cust_params)
+
+    M.run()
+    M.plot()
 
 # %% Steady state plots
 

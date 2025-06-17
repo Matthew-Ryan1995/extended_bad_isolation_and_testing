@@ -149,22 +149,26 @@ def get_update_paths(source="En", target="An"):
             for pp in old_paths:
                 new_paths.append(pp*kw_list[i] * (1-pT_list[i]))
 
-            # If the old path ends in kw*(1-pT), we append a loop a*w*(1-pT) term
+            # If the old path ends in kw, we append a loop a*w term
             for pp in old_paths:
                 tmp = pp.subs((kw_list[i-1]),
-                              w_list[i] * a_list[i] * (1-pT_list[i]))
+                              w_list[i] * a_list[i])
+                # tmp = pp.subs((kw_list[i-1]),
+                #               w_list[i] * a_list[i] * (1-pT_list[i]))
 
                 if not tmp == pp:
-                    tmp = tmp.subs((pT_list[i-1]), 0)
+                    # tmp = tmp.subs((pT_list[i-1]), 0)
                     new_paths.append(tmp)
 
-            # If the old path ends in w*(1-pT), we push along a ka*w*(1-pT) term
+            # If the old path ends in w, we push along a ka*w term
             for pp in old_paths:
                 tmp = pp.subs((w_list[i-1]),
-                              ka_list[i] * w_list[i]*(1-pT_list[i]))
+                              ka_list[i] * w_list[i])
+                # tmp = pp.subs((w_list[i-1]),
+                #               ka_list[i] * w_list[i]*(1-pT_list[i]))
 
                 if not tmp == pp:
-                    tmp = tmp.subs((pT_list[i-1]), 0)
+                    # tmp = tmp.subs((pT_list[i-1]), 0)
                     new_paths.append(tmp)
             return new_paths
     elif target == "T":
@@ -502,6 +506,30 @@ def get_all_symbols(K=1):
 
     return symb_dict
 
+
+if __name__ == "__main__":
+
+    # Check it simplifies when we expect it to.
+    k = 3
+
+    symbol_dict = get_all_symbols(K=k)
+
+    R0 = get_R0(k=k)
+
+    # Only no behaviour
+    R0_simple = R0.subs((symbol_dict["N"]), 1).subs((symbol_dict["B"]), 0)
+    R0_simple = R0_simple.subs(
+        (symbol_dict["a"]), 0).subs((symbol_dict["w"]), 0)
+    R0_simple = R0_simple.subs((symbol_dict["k"]), k)
+
+    if k > 1:
+        for i in range(1, k):
+            R0_simple = R0_simple.subs(
+                (symbol_dict["beta_list"][i]), symbol_dict["beta_list"][0])
+
+    R0_simple = R0_simple.simplify()
+
+    print(R0_simple)
 
 # %% Testing
 
