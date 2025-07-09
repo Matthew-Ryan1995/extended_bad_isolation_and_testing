@@ -499,6 +499,8 @@ class bad(object):
             for cc in self.CC:
                 if "b" in cc.name:
                     B_total += self.results[:, cc.value]
+                if "T" in cc.name:
+                    B_total += self.results[:, cc.value]
             return B_total
         else:
             print("Model has not been run")
@@ -1655,329 +1657,104 @@ if __name__ == "__main__":
     M.run()
     M.plot()
 
-# %% Steady state plots
+# %% Static vs Dynamic behaviour
 
-    # height=7
-    # dpi= 300
+    num_days_to_run = 2*365
 
-    # ss, res= M1.find_ss()
+    gamma = 1/7
+    sigma = 1/3
+    R0 = 3.24
 
-    # plt.figure()
-    # plt.title("Susceptibles")
-    # plt.plot(M1.t_range,
-    #          M1.results[:, self.CC["Sn"]],
-    #          label = "$S_N$",
-    #          color = "blue",
-    #          linestyle= "-")
-    # plt.plot([M1.t_range[0], M1.t_range[-1]],
-    #          [ss[self.CC["Sn"]], ss[self.CC["Sn"]]],
-    #          color = "blue",
-    #          linestyle= ":")
-    # plt.plot(M1.t_range,
-    #          M1.results[:, self.CC["Sb"]],
-    #          label = "$S_B$",
-    #          color = "cornflowerblue",
-    #          linestyle= "-")
-    # plt.plot([M1.t_range[0], M1.t_range[-1]],
-    #          [ss[self.CC["Sb"]], ss[self.CC["Sb"]]],
-    #          color = "cornflowerblue",
-    #          linestyle= ":")
-    # plt.ylabel("Proportion of population")
-    # plt.xlabel("Time (days)")
-    # plt.legend()
-    # if flag_save_figs:
-    #     plt.savefig("../img/ss_susceptibles.png",
-    #                 dpi=dpi,
-    #                 bbox_inches="tight")
-    #     plt.close()
-    # else:
-    #     plt.show()
+    cust_params = load_param_defaults()
+    cust_params["transmission"] = 1
+    cust_params["infectious_period"] = 1/gamma
+    cust_params["immune_period"] = 240
+    cust_params["latent_period"] = 1/sigma  # Turning off demography
 
-    # plt.figure()
-    # plt.title("Exposed")
-    # plt.plot(M1.t_range,
-    #          M1.results[:, self.CC["En"]],
-    #          label = "$E_N$",
-    #          color = "orange",
-    #          linestyle= "-")
-    # plt.plot([M1.t_range[0], M1.t_range[-1]],
-    #          [ss[self.CC["En"]], ss[self.CC["En"]]],
-    #          color = "orange",
-    #          linestyle= ":")
-    # plt.plot(M1.t_range,
-    #          M1.results[:, self.CC["Eb"]],
-    #          label = "$E_B$",
-    #          color = "darkorange",
-    #          linestyle= "-")
-    # plt.plot([M1.t_range[0], M1.t_range[-1]],
-    #          [ss[self.CC["Eb"]], ss[self.CC["Eb"]]],
-    #          color = "darkorange",
-    #          linestyle= ":")
-    # plt.ylabel("Proportion of population")
-    # plt.xlabel("Time (days)")
-    # plt.legend()
-    # if flag_save_figs:
-    #     plt.savefig("../img/ss_exposed.png",
-    #                 dpi=dpi,
-    #                 bbox_inches="tight")
-    #     plt.close()
-    # else:
-    #     plt.show()
+    cust_params["a1"] = cust_params["a1"]*gamma
+    cust_params["w1"] = cust_params["w1"]*gamma
+    cust_params["a2"] = cust_params["a1"]*gamma
+    cust_params["w2"] = cust_params["w2"]*gamma
+    cust_params["w3"] = cust_params["w3"]*gamma
 
-    # plt.figure()
-    # plt.title("Infectious")
-    # plt.plot(M1.t_range,
-    #          M1.results[:, self.CC["An],
-    #          label = "$A_N$",
-    #          color = "peru",
-    #          linestyle= "-")
-    # plt.plot([M1.t_range[0], M1.t_range[-1]],
-    #          [ss[self.CC["An], ss[self.CC["An]],
-    #          color = "peru",
-    #          linestyle= ":")
-    # plt.plot(M1.t_range,
-    #          M1.results[:, self.CC["Ab],
-    #          label = "$A_B$",
-    #          color = "peachpuff",
-    #          linestyle= "-")
-    # plt.plot([M1.t_range[0], M1.t_range[-1]],
-    #          [ss[self.CC["Ab], ss[self.CC["Ab]],
-    #          color = "peachpuff",
-    #          linestyle= ":")
-    # plt.plot(M1.t_range,
-    #          M1.results[:, self.CC["In],
-    #          label = "$I_N$",
-    #          color = "red",
-    #          linestyle= "-")
-    # plt.plot([M1.t_range[0], M1.t_range[-1]],
-    #          [ss[self.CC["In], ss[self.CC["In]],
-    #          color = "red",
-    #          linestyle= ":")
-    # plt.plot(M1.t_range,
-    #          M1.results[:, self.CC["Ib],
-    #          label = "$I_B$",
-    #          color = "darkred",
-    #          linestyle= "-")
-    # plt.plot([M1.t_range[0], M1.t_range[-1]],
-    #          [ss[self.CC["Ib], ss[self.CC["Ib]],
-    #          color = "darkred",
-    #          linestyle= ":")
-    # plt.plot(M1.t_range,
-    #          M1.results[:, self.CC["T],
-    #          label = "$T$",
-    #          color = "lightcoral",
-    #          linestyle= "-")
-    # plt.plot([M1.t_range[0], M1.t_range[-1]],
-    #          [ss[self.CC["T], ss[self.CC["T]],
-    #          color = "lightcoral",
-    #          linestyle= ":")
-    # plt.ylabel("Proportion of population")
-    # plt.xlabel("Time (days)")
-    # plt.legend()
-    # if flag_save_figs:
-    #     plt.savefig("../img/ss_infectious.png",
-    #                 dpi=dpi,
-    #                 bbox_inches="tight")
-    #     plt.close()
-    # else:
-    #     plt.show()
+    cust_params["delta"] = [1, 0, 0, 1, 0, 1, 0]
+    # cust_params["pT"] = [0.1, 0.2, 0.3, 0.4, 0.9, 0.9, 0.9]
+    cust_params["k"] = 7
 
-    # plt.figure()
-    # plt.title("Recovereds")
-    # plt.plot(M1.t_range,
-    #          M1.results[:, self.CC["Rn],
-    #          label = "$R_N$",
-    #          color = "green",
-    #          linestyle= "-")
-    # plt.plot([M1.t_range[0], M1.t_range[-1]],
-    #          [ss[self.CC["Rn], ss[self.CC["Rn]],
-    #          color = "green",
-    #          linestyle= ":")
-    # plt.plot(M1.t_range,
-    #          M1.results[:, self.CC["Rb],
-    #          label = "$R_B$",
-    #          color = "darkgreen",
-    #          linestyle= "-")
-    # plt.plot([M1.t_range[0], M1.t_range[-1]],
-    #          [ss[self.CC["Rb], ss[self.CC["Rb]],
-    #          color = "darkgreen",
-    #          linestyle= ":")
-    # plt.ylabel("Proportion of population")
-    # plt.xlabel("Time (days)")
-    # plt.legend()
-    # if flag_save_figs:
-    #     plt.savefig("../img/ss_recovereds.png",
-    #                 dpi=dpi,
-    #                 bbox_inches="tight")
-    #     plt.close()
-    # else:
-    #     plt.show()
+    M_tmp = bad(**cust_params)
+    R0_multiplier = M_tmp.get_reproduction_number()
 
-# %% Phase space: SI
+    cust_params["transmission"] = R0 / R0_multiplier
 
-    # plt.figure()
-    # plt.title("S-I phase plot")
-    # plt.plot(M1.results[:, self.CC["Sn],
-    #          M1.results[:, self.CC["In],
-    #          label = "$N$",
-    #          color = "blue",
-    #          linestyle= "-")
-    # plt.plot(M1.results[:, self.CC["Sb],
-    #          M1.results[:, self.CC["Ib],
-    #          label = "$B$",
-    #          color = "red",
-    #          linestyle= "-")
-    # plt.plot(M1.results[:, self.CC["Sb] + M1.results[:, self.CC["Sn],
-    #          M1.results[:, self.CC["Ib] + M1.results[:,
-    #                                                      self.CC["In] + M1.results[:, self.CC["T],
-    #          label = "$Total$",
-    #          color = "gray",
-    #          linestyle= "-")
+    M_dynamic = bad(**cust_params)
+    M_static = bad(**cust_params)
 
-    # plt.ylabel("I")
-    # plt.xlabel("S")
-    # plt.legend()
-    # if flag_save_figs:
-    #     plt.savefig("../img/ss_susceptibles.png",
-    #                 dpi=dpi,
-    #                 bbox_inches="tight")
-    #     plt.close()
-    # else:
-    #     plt.show()
+    M_static.w1 = 0
+    M_static.w2 = 0
+    M_static.w3 = 0
+    M_static.a1 = 0
+    M_static.a2 = 0
 
-# %% Phase space: BI
+    M_dynamic.run(t_end=num_days_to_run, t_step=0.1)
+    M_static.run(t_end=num_days_to_run, t_step=0.1)
 
-    # plt.figure()
-    # plt.title("B-I phase plot")
-    # # plt.plot(M1.get_B(),
-    # #          M1.get_I(),
-    # #          label="All I",
-    # #          color="gray",
-    # #          linestyle="-")
+    plt.figure()
+    plt.title("S - I phase plane")
+    plt.plot(M_dynamic.get_S(), M_dynamic.get_all_infectious(),
+             linestyle=":", color="grey",
+             label="Dynamic behaviour")
+    plt.plot(M_static.get_S(), M_static.get_all_infectious(),
+             linestyle="-", color="green",
+             label="Static behaviour")
+    plt.legend(loc=(0.6, 0.75))
+    plt.xlabel("Susceptibles (Sn + Sb)")
+    plt.ylabel("Infectious (I + A + T)")
+    plt.xlim(0, 1)
+    plt.ylim(0, 0.5)
+    if flag_save_figs:
+        plt.savefig("../img/phasePlane_S_O_dyanmic_static.png",
+                    dpi=dpi,
+                    bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()
+# %%
+    params_static = cust_params.copy()
 
-    # plt.ylabel("Infection Prevalence")
-    # plt.xlabel("Behaviour prevalence")
-    # plt.legend()
+    B_range = np.arange(start=0.2, stop=1, step=0.2)
 
-    # plt.plot(M1.get_B(),
-    #          M1.results[:, self.CC["Ib],
-    #          label = "$I_B$",
-    #          color = "red",
-    #          linestyle= "-")
+    M = bad(**params_static)
+    M.w1 = 0
+    M.w2 = 0
+    M.w3 = 0
+    M.a1 = 0
+    M.a2 = 0
 
-    # plt.plot(M1.get_B(),
-    #          M1.results[:, self.CC["T],
-    #          label = "$T$",
-    #          color = "blue",
-    #          linestyle= "-")
+    IC = M.init_cond
 
-    # plt.ylabel("Infection Prevalence")
-    # plt.xlabel("Behaviour prevalence")
-    # plt.legend()
+    plt.figure()
+    for b in B_range:
+        IC[M.CC.Sn] = 1 - b - IC[M.CC.In1]
+        IC[M.CC.Sb] = b
 
-    # if flag_save_figs:
-    #     plt.savefig("../img/ss_susceptibles.png",
-    #                 dpi=dpi,
-    #                 bbox_inches="tight")
-    #     plt.close()
-    # else:
-    #     plt.show()
+        M.init_cond = IC
+        M.run(t_end=num_days_to_run, t_step=0.1)
 
-
-# %% Bifurcation diagram
-#     R0_min=0
-#     R0_max=10
-#     R0_step=0.1
-#     R0_range=np.arange(R0_min, R0_max + R0_step, step=R0_step)
-
-#     pA=cust_params["pA"]
-#     qA=cust_params["qA"]
-#     gamma=1/cust_params["infectious_period"]
-
-#     res=[]
-#     # save = False
-#     M2=bad(**cust_params)
-
-#     for r0 in R0_range:
-#         beta=r0 * gamma / ((pA*qA + 1 - pA))
-#         tmp_params=dict(cust_params)
-#         tmp_params["transmission"]=beta
-#         M2.update_params(**tmp_params)
-#         ss, tmp=M2.find_ss()
-#         res.append(ss)
-
-#     res=np.array(res)
-
-#     plt.figure()
-#     plt.title("Susceptible and recovered")
-#     plt.plot(R0_range,
-#              res[:, self.CC["Sn],
-#              color = "blue",
-#              label= "$S_N$")
-#     plt.plot(R0_range,
-#              res[:, self.CC["Sb],
-#              color = "cornflowerblue",
-#              label= "$S_B$")
-#     plt.plot(R0_range,
-#              res[:, self.CC["Rn],
-#              color = "green",
-#              label= "$R_N$")
-#     plt.plot(R0_range,
-#              res[:, self.CC["Rb],
-#              color = "darkgreen",
-#              label= "$R_B$")
-#     plt.ylabel("Steady state value")
-#     plt.xlabel("Behaviour free reproduction number")
-#     plt.legend(loc=[1.05, 0.])
-#     if flag_save_figs:
-#         plt.savefig("../img/ss_by_r0_susceptible.png",
-#                     dpi=dpi,
-#                     bbox_inches="tight")
-#         plt.close()
-#     else:
-#         plt.show()
-
-# # %% Testing accuracy
-#     pT_min=0
-#     pT_max=1
-#     pT_step=0.01
-#     pT_range=np.arange(pT_min, pT_max + pT_step, step=pT_step)
-
-#     res=[]
-#     # save = False
-#     tmp_params=dict(cust_params)
-#     M3=bad(**tmp_params)
-
-#     for pt in pT_range:
-#         tmp_params["pT"]=pt
-#         M3.update_params(**tmp_params)
-#         ss, _=M3.find_ss()
-
-#         res.append(ss)
-
-#     res=np.array(res)
-
-#     plt.figure()
-#     plt.plot(pT_range,
-#              res[:, [self.CC["Sb, self.CC["Eb, self.CC["Ab,
-#                      self.CC["Ib, self.CC["Rb, self.CC["T]].sum(1),
-#              label= "behaviour")
-#     plt.plot(pT_range,
-#              res[:, [self.CC["An, self.CC["In, self.CC["Ab,
-#                      self.CC["Ib, self.CC["T]].sum(1),
-#              label= "infection")
-
-#     plt.ylabel("Proportion population")
-#     plt.xlabel("p_T")
-#     plt.legend()
-#     plt.show()
-
-#     plt.figure()
-#     plt.plot(res[:, [self.CC["Sb, self.CC["Eb, self.CC["Ab,
-#                      self.CC["Ib, self.CC["Rb, self.CC["T]].sum(1),
-#              res[:, [self.CC["An, self.CC["In, self.CC["Ab,
-#                      self.CC["Ib, self.CC["T]].sum(1))
-#     plt.xlabel("Behaviour")
-#     plt.ylabel("Infection")
-#     plt.title("I vs B for differnt p_T")
-#     plt.show()
+        plt.title("S - I phase plane")
+        plt.plot(M.get_S(), M.get_all_infectious(),
+                 label=f"$B(0)$: {round(b, 1)}")
+    plt.plot(M_dynamic.get_S(), M_dynamic.get_all_infectious(),
+             linestyle=":", color="grey",
+             label="Dynamic behaviour")
+    plt.legend(loc=(0.55, 0.5))
+    plt.xlabel("Susceptibles (Sn + Sb)")
+    plt.ylabel("Infectious (I + A + T)")
+    plt.xlim(0, 1)
+    plt.ylim(0, 0.5)
+    if flag_save_figs:
+        plt.savefig("../img/phasePlane_S_O_vary_static.png",
+                    dpi=dpi,
+                    bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()
