@@ -16,7 +16,7 @@ TODO:
 
 # %% Packages/libraries
 import math
-from scipy.integrate import quad, solve_ivp
+from scipy.integrate import solve_ivp
 from scipy.optimize import fsolve
 import numpy as np
 import matplotlib.pyplot as plt
