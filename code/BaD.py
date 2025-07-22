@@ -28,35 +28,35 @@ import sympyRo
 
 # %% Plotting options
 dpi = 300
-flag_save_figs = True
+flag_save_figs = False
 
 # %% Class definitions
 
 
-class Compartments(IntEnum):
-    """
-    for speed ups whilst maintaining readability of code
-    """
-    Sn = 0
-    Sb = 1
-    En = 2
-    Eb = 3
+# class Compartments(IntEnum):
+#     """
+#     for speed ups whilst maintaining readability of code
+#     """
+#     Sn = 0
+#     Sb = 1
+#     En = 2
+#     Eb = 3
 
-    An = 4
-    Ab = 5
-    In = 6
-    Ib = 7
-    T = 8
+#     An = 4
+#     Ab = 5
+#     In = 6
+#     Ib = 7
+#     T = 8
 
-    Rn = 9
-    Rb = 10
+#     Rn = 9
+#     Rb = 10
 
-    An_inc = 11
-    Ab_inc = 12
-    In_inc = 13
-    Ib_inc = 14
-    T_inc = 15
-    incidence = 16
+#     An_inc = 11
+#     Ab_inc = 12
+#     In_inc = 13
+#     Ib_inc = 14
+#     T_inc = 15
+#     incidence = 16
 
 
 def generate_compartments(k):
@@ -69,6 +69,8 @@ def generate_compartments(k):
     names += [f"Ib{i+1}" for i in range(k)]
     names += [f"T{i+1}" for i in range(k)]
     names += ["Rn", "Rb"]
+    names += ["A_inc", "I_inc", "T_inc", "Inc"]
+    names += ["Tests"]
     return IntEnum("Compartment", {name: i for i, name in enumerate(names)})
 
 
@@ -225,7 +227,7 @@ class bad(object):
     def rate_to_no_test(self, N):  # i.e. alpha
         return self.a1 * (N) + self.a2
 
-    def odes(self, t, prev_pop, phi=False, flag_track_incidence=False):
+    def odes(self, t, prev_pop, phi=False, psi=False, flag_track_incidence=False, flag_tests=False):
         """
         ODE set up to use spi.integrate.solve_ivp.  This defines the change in state at time t.
 
@@ -245,7 +247,10 @@ class bad(object):
             rate of change of population compartments at time t.
         """
 
-        # CC = generate_compartments(k=self.k)
+        Delta = self.delta
+        if flag_tests:
+            if prev_pop[self.CC["Tests"]] < 1:
+                Delta = np.zeros(len(Delta))
 
         Y = np.zeros((len(prev_pop)))
 
@@ -260,9 +265,15 @@ class bad(object):
 
         T = 0
         for cc in self.CC:
+            if "Test" in cc.name:
+                continue
+            if "nc" in cc.name:
+                continue
             if "T" in cc.name:
                 T += prev_pop[cc.value]
         T /= total_pop
+
+        B_total += T
 
         # I_total = 0
         # for cc in CC:
@@ -365,22 +376,22 @@ class bad(object):
         if not flag_track_incidence:
             assert np.isclose(Y.sum(), 0.0), "compartment RHSs not adding to 0"
 
-        # if flag_track_incidence:
-        #     Y[self.CC["An_inc] = self.pA * \
-        #         self.sigma * prev_pop[self.CC["En]
-        #     Y[self.CC["Ab_inc] = self.pA * \
-        #         self.sigma * prev_pop[self.CC["Eb]
+        if flag_track_incidence:
+            Y[self.CC["A_inc"]] = self.pA * self.sigma * \
+                (prev_pop[self.CC["En"]] + prev_pop[self.CC["Eb"]])
 
-        #     Y[self.CC["In_inc] = (1.0-self.pA) * \
-        #         self.sigma * prev_pop[self.CC["En]
-        #     Y[self.CC["Ib_inc] = (
-        #         1.0-self.pA) * (1.0-self.pT) * self.sigma * prev_pop[self.CC["Eb]
+            Y[self.CC["T_inc"]] = (1.0-self.pA) * self.delta[0] * \
+                self.pT[0] * self.sigma * prev_pop[self.CC["Eb"]]
+            if self.k > 1:
+                for j in range(2, self.k + 1):
+                    Y[self.CC["T_inc"]] += self.delta[j-1] * self.pT[j-1] * \
+                        self.k * self.gamma * prev_pop[self.CC[f"Ib{j-1}"]]
 
-        #     Y[self.CC["T_inc] = (1.0-self.pA) * self.pT * self.sigma * \
-        #         prev_pop[self.CC["Eb]
+            Y[self.CC["Inc"]] = lam * prev_pop[self.CC["Sn"]] + \
+                self.qB * lam * prev_pop[self.CC["Sb"]]
 
-        #     Y[self.CC["incidence] = lam * prev_pop[self.CC["Sn] + \
-        #         self.qB * lam * prev_pop[self.CC["Sb]
+            Y[self.CC["I_inc"]] = Y[self.CC["Inc"]] - \
+                Y[self.CC["A_inc"]] - Y[self.CC["T_inc"]]
 
         return Y
 
@@ -462,11 +473,11 @@ class bad(object):
             args.append(False)
 
         # FIXME: Incidence not set up
-        # if flag_incidence_tracking:
-        #     args.append(flag_incidence_tracking)
-        #     IC = np.concatenate((IC, np.zeros(6)))
-        # else:
-        #     args.append(False)
+        if flag_incidence_tracking:
+            args.append(flag_incidence_tracking)
+            IC = np.concatenate((IC, np.zeros(4)))
+        else:
+            args.append(False)
 
         if t_eval:
             t_range = np.arange(
@@ -489,14 +500,15 @@ class bad(object):
                             events=events,
                             args=args)
             self.results = res.y.T
-        if flag_incidence_tracking:
-            self.incidence = self.results[:, -1]
-            self.results = self.results[:, 0:-1]
 
     def get_B(self):
         if hasattr(self, "results"):
             B_total = 0
             for cc in self.CC:
+                if "Test" in cc.name:
+                    continue
+                if "nc" in cc.name:
+                    continue
                 if "b" in cc.name:
                     B_total += self.results[:, cc.value]
                 if "T" in cc.name:
@@ -534,6 +546,8 @@ class bad(object):
         if hasattr(self, "results"):
             A_total = 0
             for cc in self.CC:
+                if "nc" in cc.name:
+                    continue
                 if "A" in cc.name:
                     A_total += self.results[:, cc.value]
             return A_total
@@ -546,6 +560,8 @@ class bad(object):
         if hasattr(self, "results"):
             I_total = 0
             for cc in self.CC:
+                if "nc" in cc.name:
+                    continue
                 if "I" in cc.name:
                     I_total += self.results[:, cc.value]
             return I_total
@@ -558,6 +574,10 @@ class bad(object):
         if hasattr(self, "results"):
             T_total = 0
             for cc in self.CC:
+                if "nc" in cc.name:
+                    continue
+                if "Test" in cc.name:
+                    continue
                 if "T" in cc.name:
                     T_total += self.results[:, cc.value]
             return T_total
@@ -581,6 +601,10 @@ class bad(object):
         if hasattr(self, "results"):
             Infectious_total = 0
             for cc in self.CC:
+                if "nc" in cc.name:
+                    continue
+                if "Test" in cc.name:
+                    continue
                 if "A" in cc.name:
                     Infectious_total += self.results[:, cc.value]
                 if "I" in cc.name:
@@ -589,6 +613,17 @@ class bad(object):
                     Infectious_total += self.results[:, cc.value]
             return Infectious_total
             # return np.sum(self.results[:, [self.CC["Ab"], self.CC["Ib"], self.CC["An"], self.CC["In"], self.CC["T"]]], 1)
+        else:
+            print("Model has not been run")
+            return np.nan
+
+    def get_incidence(self, comp=None):
+        if hasattr(self, "results"):
+            if comp is None:
+                Incidence = self.results[:, self.CC["Inc"]]
+            else:
+                Incidence = self.results[:, self.CC[f"{comp}_inc"]]
+            return Incidence
         else:
             print("Model has not been run")
             return np.nan
@@ -1429,7 +1464,7 @@ if __name__ == "__main__":
 
     # set up parameter values for the simulations
     flag_use_defaults = True
-    flag_simple_plots = False
+    flag_simple_plots = True
     num_days_to_run = 100
 
     cust_params = load_param_defaults()
@@ -1456,7 +1491,7 @@ if __name__ == "__main__":
     cust_params["k"] = 4
     M1 = bad(**cust_params)
 
-    M1.run(t_end=num_days_to_run, t_step=0.1)
+    M1.run(t_end=num_days_to_run, t_step=0.1, flag_incidence_tracking=True)
 
 # %% Plots
 
