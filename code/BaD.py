@@ -25,6 +25,7 @@ import matplotlib.ticker as tkr
 import json
 from enum import IntEnum
 import sympyRo
+import warnings
 
 # %% Plotting options
 dpi = 300
@@ -255,7 +256,7 @@ class bad(object):
         Y = np.zeros((len(prev_pop)))
 
         total_pop = prev_pop[0:(self.CC["Rb"] + 1)].sum()
-        assert np.isclose(total_pop, 1.0), "total population deviating from 1"
+        # assert np.isclose(total_pop, 1.0), "total population deviating from 1"
 
         B_total = 0
         for cc in self.CC:
@@ -348,24 +349,24 @@ class bad(object):
                     alpha * prev_pop[self.CC[f"Ab{j}"]]
 
         # Ib
-        Y[self.CC["Ib1"]] = (1.0-self.pA) * (1.0-self.delta[0] * self.pT[0]) * self.sigma * prev_pop[self.CC["Eb"]] - self.k * self.gamma * \
+        Y[self.CC["Ib1"]] = (1.0-self.pA) * (1.0-Delta[0] * self.pT[0]) * self.sigma * prev_pop[self.CC["Eb"]] - self.k * self.gamma * \
             prev_pop[self.CC["Ib1"]] + omega * \
             prev_pop[self.CC["In1"]] - alpha * prev_pop[self.CC["Ib1"]]
         if self.k > 1:
             for j in range(2, self.k + 1):
-                Y[self.CC[f"Ib{j}"]] = (1.0-self.delta[j-1] * self.pT[j-1]) * self.k * self.gamma * prev_pop[self.CC[f"Ib{j-1}"]] - self.k * self.gamma * \
+                Y[self.CC[f"Ib{j}"]] = (1.0-Delta[j-1] * self.pT[j-1]) * self.k * self.gamma * prev_pop[self.CC[f"Ib{j-1}"]] - self.k * self.gamma * \
                     prev_pop[self.CC[f"Ib{j}"]] + omega * \
                     prev_pop[self.CC[f"In{j}"]] - \
                     alpha * prev_pop[self.CC[f"Ib{j}"]]
         # T
-        Y[self.CC["T1"]] = (1.0-self.pA) * self.delta[0] * self.pT[0] * self.sigma * \
+        Y[self.CC["T1"]] = (1.0-self.pA) * Delta[0] * self.pT[0] * self.sigma * \
             prev_pop[self.CC["Eb"]] - self.k * \
             self.gamma * prev_pop[self.CC["T1"]]
         if self.k > 1:
             for j in range(2, self.k + 1):
                 Y[self.CC[f"T{j}"]] = self.k * self.gamma * prev_pop[self.CC[f"T{j-1}"]] - self.k * self.gamma * \
                     prev_pop[self.CC[f"T{j}"]] + \
-                    self.delta[j-1] * self.pT[j-1] * self.k * \
+                    Delta[j-1] * self.pT[j-1] * self.k * \
                     self.gamma * prev_pop[self.CC[f"Ib{j-1}"]]
 
         # Rb
@@ -380,11 +381,11 @@ class bad(object):
             Y[self.CC["A_inc"]] = self.pA * self.sigma * \
                 (prev_pop[self.CC["En"]] + prev_pop[self.CC["Eb"]])
 
-            Y[self.CC["T_inc"]] = (1.0-self.pA) * self.delta[0] * \
+            Y[self.CC["T_inc"]] = (1.0-self.pA) * Delta[0] * \
                 self.pT[0] * self.sigma * prev_pop[self.CC["Eb"]]
             if self.k > 1:
                 for j in range(2, self.k + 1):
-                    Y[self.CC["T_inc"]] += self.delta[j-1] * self.pT[j-1] * \
+                    Y[self.CC["T_inc"]] += Delta[j-1] * self.pT[j-1] * \
                         self.k * self.gamma * prev_pop[self.CC[f"Ib{j-1}"]]
 
             Y[self.CC["Inc"]] = lam * prev_pop[self.CC["Sn"]] + \
@@ -393,6 +394,16 @@ class bad(object):
             Y[self.CC["I_inc"]] = Y[self.CC["Inc"]] - \
                 Y[self.CC["A_inc"]] - Y[self.CC["T_inc"]]
 
+        if flag_tests:
+            if not psi:
+                # Default to 100 new tests a week.
+                def psi(t): return 1000 if np.abs(t % 7) < 0.1 else 0
+            Y[self.CC["Tests"]] = psi(
+                t) - Delta[0] * (1-self.pA)*self.sigma*prev_pop[self.CC["Eb"]]
+            if self.k > 1:
+                for j in range(2, self.k + 1):
+                    Y[self.CC["Tests"]] -= Delta[j-1] * self.k * \
+                        self.gamma * prev_pop[self.CC[f"Ib{j-1}"]]
         return Y
 
     def set_initial_conditions(self, pop_size=1, starting_I=1e-6, starting_B=None):
@@ -408,7 +419,7 @@ class bad(object):
 
         # CC = generate_compartments(k=self.k)
 
-        starting_population = np.zeros(max(self.CC) + 1)
+        starting_population = np.zeros(self.CC["Rb"] + 1)
 
         if starting_B is None:
             starting_B = pop_size*(1-self.get_ss_N(Tstar=0))
@@ -433,8 +444,8 @@ class bad(object):
 
         self.init_cond = starting_population
 
-    def run(self, t_start=0, t_end=200, t_step=1, t_eval=True, phi=False,
-            events=[], flag_incidence_tracking=False):
+    def run(self, t_start=0, t_end=200, t_step=1, t_eval=True, phi=False, psi=False,
+            events=[], flag_incidence_tracking=False, flag_tests=False, initial_test_stockpile=False):
         """
         Run the model and store data and time
 
@@ -471,11 +482,30 @@ class bad(object):
             args.append(phi)
         else:
             args.append(False)
+        if psi:
+            args.append(psi)
+        else:
+            args.append(False)
 
         # FIXME: Incidence not set up
         if flag_incidence_tracking:
             args.append(flag_incidence_tracking)
             IC = np.concatenate((IC, np.zeros(4)))
+            if flag_tests:
+                total_pop = IC[0:(self.CC["Rb"] + 1)].sum()
+                if np.isclose(total_pop, 1.0):
+                    warnings.warn(
+                        "Test tracking not set up for proportional population. Not tracking tests.")
+                else:
+                    args.append(flag_tests)
+                    if initial_test_stockpile:
+                        IC = np.concatenate(
+                            (IC, np.array([initial_test_stockpile])))
+                    else:
+                        # Default ot 100 available tests
+                        IC = np.concatenate((IC, np.array([1000])))
+            else:
+                args.append(False)
         else:
             args.append(False)
 
@@ -1465,7 +1495,7 @@ if __name__ == "__main__":
     # set up parameter values for the simulations
     flag_use_defaults = True
     flag_simple_plots = True
-    num_days_to_run = 100
+    num_days_to_run = 300
 
     cust_params = load_param_defaults()
     if not flag_use_defaults:  # version manually overriding values in json file
@@ -1486,12 +1516,14 @@ if __name__ == "__main__":
         cust_params["w2"] = cust_params["w2"]*gamma
         cust_params["w3"] = cust_params["w3"]*gamma
 
-    cust_params["delta"] = [1, 1, 1, 0]
+    cust_params["delta"] = [1, 0, 0, 0]
     # cust_params["pT"] = [0.1, 0.2, 0.3, 0.4, 0.9, 0.9, 0.9]
     cust_params["k"] = 4
     M1 = bad(**cust_params)
+    M1.set_initial_conditions(pop_size=1e5)
 
-    M1.run(t_end=num_days_to_run, t_step=0.1, flag_incidence_tracking=True)
+    M1.run(t_end=num_days_to_run, t_step=0.1,
+           flag_incidence_tracking=True, flag_tests=True,  initial_test_stockpile=1e3)
 
 # %% Plots
 
