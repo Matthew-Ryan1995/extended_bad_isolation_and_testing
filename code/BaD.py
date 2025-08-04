@@ -396,7 +396,7 @@ class bad(object):
 
         if flag_tests:
             if not psi:
-                # Default to 100 new tests a week.
+                # Default to 1000 new tests a week.
                 def psi(t): return 1000 if np.abs(t % 7) < 0.1 else 0
             Y[self.CC["Tests"]] = psi(
                 t) - Delta[0] * (1-self.pA)*self.sigma*prev_pop[self.CC["Eb"]]
@@ -425,6 +425,12 @@ class bad(object):
             starting_B = pop_size*(1-self.get_ss_N(Tstar=0))
             # always have some behaviour unless pre specified
             starting_B = max(starting_B, 1e-6)
+
+        if (pop_size > 1) and (starting_I < 1):
+            starting_I *= pop_size
+
+        if (pop_size > 1) and (starting_B < 1):
+            starting_B *= pop_size
 
         # error handling
         assert pop_size > 0, "pop_size must be > 0"
@@ -502,7 +508,7 @@ class bad(object):
                         IC = np.concatenate(
                             (IC, np.array([initial_test_stockpile])))
                     else:
-                        # Default ot 100 available tests
+                        # Default ot 1000 available tests
                         IC = np.concatenate((IC, np.array([1000])))
             else:
                 args.append(False)
@@ -530,6 +536,8 @@ class bad(object):
                             events=events,
                             args=args)
             self.results = res.y.T
+
+        self.terminated = res.status
 
     def get_B(self):
         if hasattr(self, "results"):
@@ -1523,7 +1531,7 @@ if __name__ == "__main__":
     M1.set_initial_conditions(pop_size=1e5)
 
     M1.run(t_end=num_days_to_run, t_step=0.1,
-           flag_incidence_tracking=True, flag_tests=True,  initial_test_stockpile=1e3)
+           flag_incidence_tracking=True, flag_tests=False,  initial_test_stockpile=1e3)
 
 # %% Plots
 
