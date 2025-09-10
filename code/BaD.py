@@ -538,6 +538,7 @@ class bad(object):
             self.results = res.y.T
 
         self.terminated = res.status
+        self.t_events = res.t_events
 
     def get_B(self):
         if hasattr(self, "results"):
@@ -1524,9 +1525,9 @@ if __name__ == "__main__":
         cust_params["w2"] = cust_params["w2"]*gamma
         cust_params["w3"] = cust_params["w3"]*gamma
 
-    cust_params["delta"] = [1, 0, 0, 0]
+    cust_params["delta"] = [1, 0, 0, 0, 0, 0, 0]
     # cust_params["pT"] = [0.1, 0.2, 0.3, 0.4, 0.9, 0.9, 0.9]
-    cust_params["k"] = 4
+    cust_params["k"] = 7
     M1 = bad(**cust_params)
     M1.set_initial_conditions(pop_size=1e5)
 
@@ -1795,6 +1796,13 @@ if __name__ == "__main__":
         plt.show()
 # %%
     params_static = cust_params.copy()
+
+    params_static["delta"] = [1, 1, 1, 0, 0, 0, 0]
+
+    M_dynamic = bad(**params_static)
+    M_static = bad(**cust_params)
+
+    M_dynamic.run(t_end=num_days_to_run, t_step=0.1)
 
     B_range = np.arange(start=0.2, stop=1, step=0.2)
 
